@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4 text-dark">Buracos Registrados na Cidade</h2>
+    </div>
+    {% for d in denuncias %}
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100">
+            {% if d.foto %}
+                <img src="{{ d.foto.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Foto do buraco">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title text-danger">{{ d.rua }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Bairro: {{ d.bairro }}</h6>
+                <p class="card-text"><strong>Ref:</strong> {{ d.referencia|default:"Não informada" }}</p>
+                <p class="card-text">{{ d.descricao }}</p>
+                <span class="badge 
+                    {% if d.status == 'Pendente' %}bg-warning text-dark
+                    {% elif d.status == 'Em Andamento' %}bg-primary
+                    {% else %}bg-success{% endif %}">
+                    {{ d.status }}
+                </span>
+            </div>
+            <div class="card-footer text-muted small">
+                Registrado em: {{ d.data_criacao|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">Nenhuma denúncia registrada até o momento. Seja o primeiro a ajudar!</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
