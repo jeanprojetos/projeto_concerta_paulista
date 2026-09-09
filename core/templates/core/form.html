@@ -4,13 +4,59 @@
     <div class="col-md-6">
         <div class="card shadow p-4">
             <h3 class="mb-3 text-success">Registrar Novo Buraco</h3>
+            
+            <!-- Botão de GPS -->
+            <button type="button" class="btn btn-outline-primary w-100 mb-2 fw-bold shadow-sm" onclick="pegarGPS()">
+                📍 Capturar minha localização atual
+            </button>
+            <p id="status-gps" class="text-center text-muted small mb-3"></p>
+
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ form.as_p }}
-                <button type="submit" class="btn btn-success w-100 mt-2">Enviar Denúncia</button>
+                <button type="submit" class="btn btn-success w-100 mt-2 fw-bold">Enviar Denúncia</button>
             </form>
             <a href="{% url 'lista_denuncias' %}" class="btn btn-link w-100 mt-2 text-secondary">Voltar</a>
         </div>
     </div>
 </div>
+
+<script>
+    // Oculta os campos gerados pelo Django para não poluir a tela do usuário
+    document.addEventListener("DOMContentLoaded", function() {
+        let latField = document.getElementById('id_latitude');
+        let lonField = document.getElementById('id_longitude');
+        if (latField && lonField) {
+            latField.parentElement.style.display = 'none';
+            lonField.parentElement.style.display = 'none';
+        }
+    });
+
+    function pegarGPS() {
+        const status = document.getElementById('status-gps');
+        
+        if (!navigator.geolocation) {
+            status.innerHTML = "<span class='text-danger'>GPS não suportado pelo navegador.</span>";
+            return;
+        }
+
+        status.textContent = "Buscando localização...";
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                let latField = document.getElementById('id_latitude');
+                let lonField = document.getElementById('id_longitude');
+                
+                if(latField && lonField) {
+                    latField.value = position.coords.latitude;
+                    lonField.value = position.coords.longitude;
+                    status.innerHTML = "<span class='text-success fw-bold'>📍 Localização capturada com precisão!</span>";
+                }
+            },
+            () => {
+                status.innerHTML = "<span class='text-danger'>Erro ao buscar GPS. Aceite a permissão do navegador.</span>";
+            }
+        );
+    }
+</script>
 {% endblock %}

@@ -15,12 +15,19 @@
                 <h6 class="card-subtitle mb-2 text-muted">Bairro: {{ d.bairro }}</h6>
                 <p class="card-text"><strong>Ref:</strong> {{ d.referencia|default:"Não informada" }}</p>
                 <p class="card-text">{{ d.descricao }}</p>
+                
                 <span class="badge 
                     {% if d.status == 'Pendente' %}bg-warning text-dark
                     {% elif d.status == 'Em Andamento' %}bg-primary
                     {% else %}bg-success{% endif %}">
                     {{ d.status }}
                 </span>
+
+                <!-- Botão do GPS adicionado aqui -->
+                <a href="{{ d.link_gps }}" target="_blank" class="btn btn-sm btn-success d-block mt-3 fw-bold shadow-sm">
+                    📍 Abrir no GPS
+                </a>
+
             </div>
             <div class="card-footer text-muted small">
                 Registrado em: {{ d.data_criacao|date:"d/m/Y H:i" }}
