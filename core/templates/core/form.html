@@ -1,31 +1,46 @@
 {% extends 'core/base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow p-4">
-            <h3 class="mb-3 text-success">Registrar Novo Buraco</h3>
-            
-            <!-- Botão de GPS -->
-            <button type="button" class="btn btn-outline-primary w-100 mb-2 fw-bold shadow-sm" onclick="pegarGPS()">
-                📍 Capturar minha localização atual
-            </button>
-            <p id="status-gps" class="text-center text-muted small mb-3"></p>
+<div class="cp-form-wrap">
+    <div class="cp-form-card">
+        <h1>Registrar uma denúncia</h1>
+        <p class="cp-form-sub">Preencha os dados abaixo. Uma foto ajuda a equipe responsável a avaliar o reparo com mais rapidez.</p>
 
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-success w-100 mt-2 fw-bold">Enviar Denúncia</button>
-            </form>
-            <a href="{% url 'lista_denuncias' %}" class="btn btn-link w-100 mt-2 text-secondary">Voltar</a>
+        <button type="button" id="cp-gps-btn" class="cp-btn cp-btn-outline cp-btn-block" onclick="pegarGPS()">
+            Capturar minha localização atual
+        </button>
+        <p id="status-gps" class="cp-gps-status"></p>
+
+        {% if mostrar_aviso_duplicada %}
+        <div class="cp-warning-box">
+            <p>Já existe uma denúncia parecida, ainda não resolvida, para essa rua e bairro:</p>
+            <ul>
+                {% for dup in duplicatas %}
+                    <li>{{ dup.rua }}, {{ dup.bairro }} (status: {{ dup.status }}, registrada em {{ dup.data_criacao|date:"d/m/Y" }})</li>
+                {% endfor %}
+            </ul>
+            <p>Você pode enviar mesmo assim se for um problema diferente.</p>
         </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="cp-form-actions">
+                {% if mostrar_aviso_duplicada %}
+                    <button type="submit" name="forcar_envio" value="1" class="cp-btn cp-btn-primary cp-btn-block">Enviar mesmo assim</button>
+                {% else %}
+                    <button type="submit" class="cp-btn cp-btn-primary cp-btn-block">Enviar denúncia</button>
+                {% endif %}
+                <a href="{% url 'lista_denuncias' %}" class="cp-btn cp-btn-outline cp-btn-block">Voltar para a lista</a>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-    // Oculta os campos gerados pelo Django para não poluir a tela do usuário
-    document.addEventListener("DOMContentLoaded", function() {
-        let latField = document.getElementById('id_latitude');
-        let lonField = document.getElementById('id_longitude');
+    document.addEventListener("DOMContentLoaded", function () {
+        var latField = document.getElementById('id_latitude');
+        var lonField = document.getElementById('id_longitude');
         if (latField && lonField) {
             latField.parentElement.style.display = 'none';
             lonField.parentElement.style.display = 'none';
@@ -33,28 +48,34 @@
     });
 
     function pegarGPS() {
-        const status = document.getElementById('status-gps');
-        
+        var status = document.getElementById('status-gps');
+        status.classList.remove('is-success', 'is-error');
+
         if (!navigator.geolocation) {
-            status.innerHTML = "<span class='text-danger'>GPS não suportado pelo navegador.</span>";
+            status.textContent = 'Geolocalização não é compatível com este navegador.';
+            status.classList.add('is-error');
             return;
         }
 
-        status.textContent = "Buscando localização...";
-        
+        status.textContent = 'Buscando localização...';
+
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                let latField = document.getElementById('id_latitude');
-                let lonField = document.getElementById('id_longitude');
-                
-                if(latField && lonField) {
+            function (position) {
+                var latField = document.getElementById('id_latitude');
+                var lonField = document.getElementById('id_longitude');
+
+                if (latField && lonField) {
                     latField.value = position.coords.latitude;
                     lonField.value = position.coords.longitude;
-                    status.innerHTML = "<span class='text-success fw-bold'>📍 Localização capturada com precisão!</span>";
+                    status.textContent = 'Localização capturada com sucesso.';
+                } else {
+                    status.textContent = 'Localização obtida, mas este formulário ainda não salva coordenadas.';
                 }
+                status.classList.add('is-success');
             },
-            () => {
-                status.innerHTML = "<span class='text-danger'>Erro ao buscar GPS. Aceite a permissão do navegador.</span>";
+            function () {
+                status.textContent = 'Não foi possível obter a localização. Verifique a permissão do navegador.';
+                status.classList.add('is-error');
             }
         );
     }

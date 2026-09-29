@@ -1,0 +1,22 @@
+{
+    "name": "Concerta Paulista",
+    "short_name": "Concerta PLT",
+    "description": "Registre e acompanhe denúncias de problemas nas vias públicas de Paulista, PE.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#F5F7FA",
+    "theme_color": "#1C8A4B",
+    "icons": [
+        {
+            "src": "/static/core/img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/core/img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

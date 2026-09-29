@@ -1,43 +1,208 @@
 {% extends 'core/base.html' %}
+{% load static %}
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2 class="mb-4 text-dark">Buracos Registrados na Cidade</h2>
-    </div>
-    {% for d in denuncias %}
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm h-100">
-            {% if d.foto %}
-                <img src="{{ d.foto.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Foto do buraco">
-            {% endif %}
-            <div class="card-body">
-                <h5 class="card-title text-danger">{{ d.rua }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Bairro: {{ d.bairro }}</h6>
-                <p class="card-text"><strong>Ref:</strong> {{ d.referencia|default:"Não informada" }}</p>
-                <p class="card-text">{{ d.descricao }}</p>
-                
-                <span class="badge 
-                    {% if d.status == 'Pendente' %}bg-warning text-dark
-                    {% elif d.status == 'Em Andamento' %}bg-primary
-                    {% else %}bg-success{% endif %}">
-                    {{ d.status }}
-                </span>
-
-                <!-- Botão do GPS adicionado aqui -->
-                <a href="{{ d.link_gps }}" target="_blank" class="btn btn-sm btn-success d-block mt-3 fw-bold shadow-sm">
-                    📍 Abrir no GPS
-                </a>
-
+<section class="cp-hero">
+    <div class="cp-hero-grid">
+        <div>
+            <h1 class="cp-hero-title">Ruas melhores em <span class="accent">Paulista</span> começam com o seu aviso</h1>
+            <p class="cp-hero-text">
+                O Concerta Paulista reúne denúncias de buracos nas vias públicas da cidade.
+                Registre um problema com foto e localização para ajudar a prefeitura a priorizar os reparos.
+            </p>
+            <div class="cp-hero-actions">
+                <a href="{% url 'criar_denuncia' %}" class="cp-btn cp-btn-primary cp-btn-lg">Registrar denúncia</a>
             </div>
-            <div class="card-footer text-muted small">
-                Registrado em: {{ d.data_criacao|date:"d/m/Y H:i" }}
+            <p class="cp-hero-note">Leva menos de dois minutos. Não é necessário criar conta.</p>
+        </div>
+
+        <div class="cp-hero-art">
+            <div class="cp-hero-photo-wrap">
+                <img src="{% static 'core/img/capa.jpg' %}" alt="Rua de terra com buracos e água acumulada" class="cp-hero-photo">
+
+                <div class="cp-hero-chip cp-hero-chip-top">
+                    <span class="cp-hero-chip-icon cp-hero-chip-icon-ok">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6 9 17l-5-5"></path>
+                        </svg>
+                    </span>
+                    Reparo concluído
+                </div>
+
+                <div class="cp-hero-chip cp-hero-chip-bottom">
+                    <span class="cp-hero-chip-icon cp-hero-chip-icon-pending">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 7v5l3 3"></path>
+                        </svg>
+                    </span>
+                    Em análise
+                </div>
             </div>
         </div>
     </div>
+</section>
+
+<div class="cp-stats">
+    <div>
+        <div class="cp-stat-num" id="stat-total">0</div>
+        <div class="cp-stat-label">Denúncias registradas</div>
+    </div>
+    <div>
+        <div class="cp-stat-num" id="stat-resolvidas">0</div>
+        <div class="cp-stat-label">Já resolvidas</div>
+    </div>
+    <div>
+        <div class="cp-stat-num" id="stat-bairros">0</div>
+        <div class="cp-stat-label">Bairros com registros</div>
+    </div>
+</div>
+
+<div class="cp-section-head">
+    <div>
+        <h2 class="cp-section-title">Como funciona</h2>
+        <p class="cp-section-sub">Três passos simples entre você perceber o problema e a prefeitura ficar sabendo dele.</p>
+    </div>
+</div>
+
+<div class="cp-steps">
+    <div class="cp-step">
+        <div class="cp-step-num">1</div>
+        <h3>Registre o problema</h3>
+        <p>Tire uma foto do buraco, informe a rua e o bairro, e envie a denúncia em poucos minutos.</p>
+    </div>
+    <div class="cp-step">
+        <div class="cp-step-num">2</div>
+        <h3>Acompanhe o status</h3>
+        <p>Cada denúncia recebe um status, pendente, em andamento ou resolvido, atualizado conforme o reparo avança.</p>
+    </div>
+    <div class="cp-step">
+        <div class="cp-step-num">3</div>
+        <h3>Ajude sua região</h3>
+        <p>Quanto mais denúncias registradas, mais fácil fica priorizar os reparos mais urgentes da cidade.</p>
+    </div>
+</div>
+
+<div class="cp-section-head">
+    <div>
+        <h2 class="cp-section-title">Mapa das denúncias</h2>
+        <p class="cp-section-sub">Localização de todas as denúncias com coordenadas registradas.</p>
+    </div>
+</div>
+
+<div class="cp-map-wrap">
+    <div id="cp-map"></div>
+</div>
+<p class="cp-map-note" id="cp-map-note"></p>
+
+<div id="lista" class="cp-section-head">
+    <div>
+        <h2 class="cp-section-title">Denúncias registradas</h2>
+    </div>
+    <span class="cp-section-count">{{ denuncias|length }} registro{{ denuncias|length|pluralize }}</span>
+</div>
+
+<div class="cp-filters">
+    <a href="{% url 'lista_denuncias' %}" class="cp-filter{% if not categoria_selecionada %} is-active{% endif %}">Todos</a>
+    {% for valor, rotulo in categorias %}
+        <a href="?categoria={{ valor|urlencode }}" class="cp-filter{% if categoria_selecionada == valor %} is-active{% endif %}">{{ rotulo }}</a>
+    {% endfor %}
+</div>
+
+<div class="cp-grid">
+    {% for d in denuncias %}
+    <div class="cp-card" data-status="{{ d.status }}" data-bairro="{{ d.bairro }}">
+        {% if d.foto %}
+            <img src="{{ d.foto.url }}" class="cp-card-photo" alt="Foto do buraco na {{ d.rua }}">
+        {% endif %}
+        <div class="cp-card-body">
+            <div class="cp-tags">
+                <span class="cp-tag" data-status="{{ d.status }}">{{ d.status }}</span>
+                <span class="cp-tag cp-tag-neutral">{{ d.categoria }}</span>
+                <span class="cp-tag cp-tag-neutral">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    {{ d.bairro }}
+                </span>
+            </div>
+            <h3 class="cp-card-street">{{ d.rua }}</h3>
+            {% if d.referencia %}
+                <p class="cp-card-ref">Referência: {{ d.referencia }}</p>
+            {% endif %}
+            <p class="cp-card-desc">{{ d.descricao }}</p>
+        </div>
+        <div class="cp-card-foot">
+            <span>Registrado em {{ d.data_criacao|date:"d/m/Y" }} às {{ d.data_criacao|date:"H:i" }}</span>
+            <a href="{{ d.link_gps }}" target="_blank" rel="noopener" class="cp-btn cp-btn-outline cp-btn-sm">Abrir no mapa</a>
+        </div>
+    </div>
     {% empty %}
-    <div class="col-12">
-        <div class="alert alert-info">Nenhuma denúncia registrada até o momento. Seja o primeiro a ajudar!</div>
+    <div class="cp-empty">
+        <p>Nenhuma denúncia registrada com esse filtro.</p>
+        <a href="{% url 'criar_denuncia' %}" class="cp-btn cp-btn-primary">Registrar denúncia</a>
     </div>
     {% endfor %}
 </div>
+
+{{ denuncias_geo|json_script:"cp-geo-data" }}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var pontos = JSON.parse(document.getElementById('cp-geo-data').textContent);
+        var nota = document.getElementById('cp-map-note');
+        var totalCards = document.querySelectorAll('.cp-card[data-status]').length;
+
+        var mapa = L.map('cp-map').setView([-7.9407, -34.8728], 13);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Mapa: Esri, OpenStreetMap',
+            maxZoom: 19,
+        }).addTo(mapa);
+
+        if (pontos.length > 0) {
+            var grupo = [];
+            pontos.forEach(function (p) {
+                var marcador = L.marker([p.lat, p.lng]).addTo(mapa);
+                marcador.bindPopup(
+                    '<strong>' + p.rua + '</strong><br>' +
+                    p.bairro + '<br>' +
+                    p.categoria + ' - ' + p.status
+                );
+                grupo.push([p.lat, p.lng]);
+            });
+            mapa.fitBounds(grupo, { padding: [30, 30] });
+        }
+
+        var semLocalizacao = totalCards - pontos.length;
+        if (semLocalizacao > 0) {
+            nota.textContent = pontos.length + ' denúncia(s) no mapa. ' + semLocalizacao + ' ainda não têm localização registrada.';
+        } else if (pontos.length > 0) {
+            nota.textContent = pontos.length + ' denúncia(s) exibida(s) no mapa.';
+        } else {
+            nota.textContent = 'Nenhuma denúncia com localização registrada ainda.';
+        }
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var cards = document.querySelectorAll('.cp-card[data-status]');
+        var total = cards.length;
+        var resolvidas = 0;
+        var bairros = new Set();
+
+        cards.forEach(function (card) {
+            if (card.getAttribute('data-status') === 'Resolvido') {
+                resolvidas += 1;
+            }
+            var bairro = card.getAttribute('data-bairro');
+            if (bairro) { bairros.add(bairro.trim().toLowerCase()); }
+        });
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-resolvidas').textContent = resolvidas;
+        document.getElementById('stat-bairros').textContent = bairros.size;
+    });
+</script>
 {% endblock %}
